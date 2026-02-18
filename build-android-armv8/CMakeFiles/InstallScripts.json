@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"C:/work/src/libcodec2/build-android-armv8/cmake_install.cmake",
-		"C:/work/src/libcodec2/build-android-armv8/src/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
