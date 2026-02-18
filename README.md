@@ -4,6 +4,22 @@ Codec 2 is an open source (LGPL 2.1) low bit rate speech codec:
 
 http://rowetel.com/codec2.html
 
+## Fork Notes (Android Build Customization)
+
+This repository is a fork customized for Android builds.
+
+- The previous `varicode` implementation/table has been removed and replaced with
+  a lightweight internal implementation.
+- For this fork's intended Android use cases, `varicode` features are not used.
+- Bitstream compatibility with historical `varicode` behavior is not guaranteed.
+- Core speech codec functionality is unchanged by this fork-specific change.
+
+License notes:
+
+- Main project license: `LGPL-2.1` (see `COPYING`).
+- Third-party notices for bundled external code are listed in
+  `THIRD_PARTY_NOTICES.md`.
+
 Also included:
 
   + FreeDV API source code.  FreeDV is an open source digital voice
