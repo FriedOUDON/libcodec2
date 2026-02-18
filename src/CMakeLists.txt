@@ -3,7 +3,7 @@
 #
 
 set(D ${CMAKE_CURRENT_SOURCE_DIR}/codebook)
-
+#target_compile_definitions(codec2 PRIVATE _Complex_I=I)
 # lsp quantisers
 
 set(CODEBOOKS
@@ -77,11 +77,11 @@ set(CODEBOOKSNEWAMP2_ENERGY
 # when crosscompiling we need a native executable
 if(CMAKE_CROSSCOMPILING)
     include(ExternalProject)
-    ExternalProject_Add(codec2_native
-       SOURCE_DIR ${CMAKE_SOURCE_DIR}
-       BUILD_COMMAND $(MAKE) generate_codebook
-       INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/generate_codebook ${CMAKE_CURRENT_BINARY_DIR}
-    )
+    #ExternalProject_Add(codec2_native
+    #   SOURCE_DIR ${CMAKE_SOURCE_DIR}
+    #   BUILD_COMMAND $(MAKE) generate_codebook
+    #   INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/generate_codebook ${CMAKE_CURRENT_BINARY_DIR}
+    #)
     add_executable(generate_codebook IMPORTED)
     set_target_properties(generate_codebook PROPERTIES
         IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/generate_codebook)
@@ -185,6 +185,18 @@ set(CODEC2_PUBLIC_HEADERS
 # Setup the codec2 library
 #
 add_library(codec2 ${CODEC2_SRCS})
+target_compile_definitions(codec2 PRIVATE
+    __USE_ISOC99
+)
+target_compile_options(codec2 PRIVATE
+    -std=gnu99
+)
+set_target_properties(codec2 PROPERTIES
+    C_STANDARD 99
+    C_STANDARD_REQUIRED YES
+)
+target_compile_options(codec2 PRIVATE -fno-builtin)
+
 if(UNIX)
     target_link_libraries(codec2 m)
 endif(UNIX)
@@ -214,6 +226,8 @@ export(TARGETS codec2
     FILE ${CMAKE_BINARY_DIR}/codec2.cmake
 )
 
+#option(BUILD_CODEC2_TOOLS "Build codec2 command line tools" OFF)
+#if(BUILD_CODEC2_TOOLS)
 add_executable(c2demo c2demo.c)
 target_link_libraries(c2demo ${CMAKE_REQUIRED_LIBRARIES} codec2)
 
@@ -225,6 +239,7 @@ target_link_libraries(c2dec ${CMAKE_REQUIRED_LIBRARIES} codec2)
 
 add_executable(c2sim c2sim.c)
 target_link_libraries(c2sim ${CMAKE_REQUIRED_LIBRARIES} codec2)
+#endif()
 
 add_executable(fdmdv_get_test_bits fdmdv_get_test_bits.c fdmdv.c kiss_fft.c codec2_fft.c kiss_fftr.c)
 target_link_libraries(fdmdv_get_test_bits m ${CMAKE_REQUIRED_LIBRARIES})

@@ -36,6 +36,10 @@
 #define OPTPARSE_API static
 #include "optparse.h"
 
+#include <math.h>
+#include <complex.h>
+
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

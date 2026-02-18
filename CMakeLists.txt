@@ -5,10 +5,10 @@
 # Please report questions, comments, problems, or patches to the freetel
 # mailing list: https://lists.sourceforge.net/lists/listinfo/freetel-codec2
 #
+cmake_minimum_required(VERSION 3.5)
+
 project(codec2 C)
-
-cmake_minimum_required(VERSION 3.0)
-
+remove_definitions(-D__STDC_NO_COMPLEX__)
 # Set policies here, probably should move to cmake dir.
 if(POLICY CMP0075)
     cmake_policy(SET CMP0075 NEW)
@@ -56,7 +56,7 @@ message(STATUS "codec2 version: ${CODEC2_VERSION}")
 
 # Set default build type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
 endif()
 
 # Set default C flags.
@@ -64,16 +64,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-strict-overflow")
 
 # Check for what C standard is supported.
 include(CheckCCompilerFlag)
-CHECK_C_COMPILER_FLAG("-std=gnu11" COMPILER_SUPPORTS_GNU11)
-CHECK_C_COMPILER_FLAG("-std=gnu99" COMPILER_SUPPORTS_GNU99)
 
-if(COMPILER_SUPPORTS_GNU11)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
-elseif(COMPILER_SUPPORTS_GNU99)
-   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
-else()
-   message(SEND_ERROR "Compiler doesn't seem to support at least gnu99, might cause problems" )
-endif()
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+#add_compile_options(-fno-builtin)
 
 # -fPIC is implied on MinGW...
 if(NOT WIN32)
