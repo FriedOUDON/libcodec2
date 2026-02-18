@@ -1,34 +1,21 @@
-//==========================================================================
-// Name:            varicode.h
-// Purpose:         Varicode encoded and decode functions
-// Created:         Nov 24, 2012
-// Authors:         David Rowe
-//
-// License:
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License version 2.1,
-//  as published by the Free Software Foundation.  This program is
-//  distributed in the hope that it will be useful, but WITHOUT ANY
-//  WARRANTY; without even the implied warranty of MERCHANTABILITY or
-//  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-//  License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-//==========================================================================
+/*
+  Lightweight text bitstream codec used by FreeDV framing paths.
+  This project is distributed under LGPL-2.1 (see COPYING).
+*/
 
 #ifndef __VARICODE__
 #define __VARICODE__
 
 #ifdef __cplusplus
 extern "C" {
-
 #endif
 
-#define VARICODE_MAX_BITS (10+2) /* max varicode bits for each ascii character */
-                                 /* 10 bits for code plus 2 0 bits for inter-character space */
+/*
+  1 start bit + 8 data bits + 2 stop bits.
+  Keep this constant for ABI compatibility with existing callers that size buffers
+  using VARICODE_MAX_BITS.
+*/
+#define VARICODE_MAX_BITS (10 + 2)
 
 struct VARICODE_DEC {
     int            state;
