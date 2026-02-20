@@ -29,17 +29,20 @@
 #ifndef __CODEC2_INTERNAL__
 #define __CODEC2_INTERNAL__
 
-//#ifndef __ANDROID__
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#include <complex.h>
+
+#undef crealf
+#undef cimagf
+#undef conjf
+#undef cabsf
+#undef cargf
+
 #define crealf(x) ((float)(x).real)
 #define cimagf(x) ((float)(x).imag)
-#define conjf(x) ((typeof(x)){(x).real, -(x).imag})
-#define cabsf(x) sqrtf((x).real*(x).real + (x).imag*(x).imag)
-#define cargf(x) atan2f((x).imag, (x).real)
-#endif
-//#endif
+#define conjf(x)  ((COMP){ (x).real, -(x).imag })
+#define cabsf(x)  sqrtf((x).real*(x).real + (x).imag*(x).imag)
+#define cargf(x)  atan2f((x).imag, (x).real)
 
-#include <complex.h>
 #include "codec2_fft.h"
 #include "newamp1.h"
 #include "newamp2.h"
