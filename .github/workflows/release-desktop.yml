@@ -161,10 +161,10 @@ jobs:
           if-no-files-found: error
 
   # -----------------------------
-  # Windows (MSVC x64)
+  # Windows (clang-cl, MSVC ABI x64)
   # -----------------------------
   build-windows-msvc:
-    name: Windows MSVC (x64)
+    name: Windows clang-cl (MSVC ABI x64)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -178,9 +178,14 @@ jobs:
         run: choco install ninja -y
         shell: pwsh
 
+      - name: Check clang-cl
+        run: clang-cl --version
+        shell: pwsh
+
       - name: Configure
         run: |
           cmake -S . -B build\msvc -G Ninja `
+            -DCMAKE_C_COMPILER=clang-cl `
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
             -DLPCNET=${{ env.LPCNET }} `
             -DBUILD_SHARED_LIBS=ON `
