@@ -85,7 +85,8 @@ if(CMAKE_CROSSCOMPILING)
     add_executable(generate_codebook IMPORTED)
     set_target_properties(generate_codebook PROPERTIES
         IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/generate_codebook)
-    add_dependencies(generate_codebook codec2_native)
+    # codec2_native target is not defined in this fork (and generate_codebook isn't required here).
+    #add_dependencies(generate_codebook codec2_native)
 else(CMAKE_CROSSCOMPILING)
 # Build code generator binaries. These do not get installed.
     # generate_codebook

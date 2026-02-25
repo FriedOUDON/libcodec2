@@ -1,0 +1,145 @@
+name: Release (Android prebuilt)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  NDK_VERSION: r27d
+  ANDROID_PLATFORM: android-23
+  BUILD_TYPE: Release
+  CMAKE_POLICY_VERSION_MINIMUM: "3.5"
+
+jobs:
+  build-android:
+    name: Build Android (${{ matrix.abi }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: ${{ env.NDK_VERSION }}
+          local-cache: true
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build rsync
+
+      # もしリポジトリ側で既に修正したなら、このステップは消してOK
+      - name: Hotfix for cross-compiling (temporary)
+        run: |
+          if grep -q "add_dependencies(generate_codebook codec2_native)" src/CMakeLists.txt; then
+            sed -i 's/add_dependencies(generate_codebook codec2_native)/# add_dependencies(generate_codebook codec2_native)/' src/CMakeLists.txt
+          fi
+
+      - name: Configure
+        run: |
+          cmake -S . -B build/${{ matrix.abi }} -G Ninja \
+            -DLPCNET=OFF \
+            -DCMAKE_TOOLCHAIN_FILE="${{ steps.setup-ndk.outputs.ndk-path }}/build/cmake/android.toolchain.cmake" \
+            -DANDROID_ABI="${{ matrix.abi }}" \
+            -DANDROID_PLATFORM="${{ env.ANDROID_PLATFORM }}" \
+            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_POLICY_VERSION_MINIMUM="${{ env.CMAKE_POLICY_VERSION_MINIMUM }}" \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install/${{ matrix.abi }}"
+
+      - name: Build
+        run: |
+          cmake --build build/${{ matrix.abi }} -j 2
+
+      - name: Install (staging)
+        run: |
+          cmake --install build/${{ matrix.abi }}
+
+      - name: Package (include/lib + LICENSES)
+        run: |
+          TAG="${GITHUB_REF_NAME:-dev}"
+          ABI="${{ matrix.abi }}"
+          PREFIX="${{ github.workspace }}/install/${ABI}"
+          OUT="${{ github.workspace }}/dist"
+          PKG="libcodec2-${TAG}-android-${ABI}"
+
+          rm -rf "${OUT}" && mkdir -p "${OUT}/${PKG}/LICENSES"
+
+          # include/
+          if [ -d "${PREFIX}/include" ]; then
+            rsync -a "${PREFIX}/include/" "${OUT}/${PKG}/include/"
+          else
+            echo "WARN: no include/ under ${PREFIX}"
+          fi
+
+          # lib/ (lib64 対応)
+          if [ -d "${PREFIX}/lib" ]; then
+            rsync -a "${PREFIX}/lib/" "${OUT}/${PKG}/lib/"
+          elif [ -d "${PREFIX}/lib64" ]; then
+            mkdir -p "${OUT}/${PKG}/lib"
+            rsync -a "${PREFIX}/lib64/" "${OUT}/${PKG}/lib/"
+          else
+            echo "ERROR: no lib directory found under ${PREFIX}" >&2
+            exit 1
+          fi
+
+          # ライセンス同梱
+          cp -a COPYING THIRD_PARTY_NOTICES.md "${OUT}/${PKG}/LICENSES/"
+
+          # ビルド情報
+          {
+            echo "tag: ${TAG}"
+            echo "commit: ${GITHUB_SHA}"
+            echo "abi: ${ABI}"
+            echo "ndk_version: ${{ env.NDK_VERSION }}"
+            echo "android_platform: ${{ env.ANDROID_PLATFORM }}"
+            echo "cmake: $(cmake --version | head -n 1)"
+            echo "ninja: $(ninja --version)"
+            echo "configure_flags: -DLPCNET=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}"
+          } > "${OUT}/${PKG}/BUILDINFO.txt"
+
+          (cd "${OUT}" && tar -czf "${PKG}.tar.gz" "${PKG}")
+          (cd "${OUT}" && sha256sum "${PKG}.tar.gz" > "${PKG}.tar.gz.sha256")
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ matrix.abi }}
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+          if-no-files-found: error
+
+  release:
+    name: Publish Release assets
+    runs-on: ubuntu-latest
+    needs: [build-android]
+    if: github.ref_type == 'tag'
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: android-*
+          merge-multiple: true
+
+      - name: Attach assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-assets/*.tar.gz
+            release-assets/*.sha256
+          generate_release_notes: true
