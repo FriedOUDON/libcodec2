@@ -114,7 +114,7 @@ jobs:
             -DLPCNET=${{ env.LPCNET }} \
             -DBUILD_SHARED_LIBS=ON \
             -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
-            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/${{ matrix.prefix }}"
+            -DCMAKE_INSTALL_PREFIX="/work/${{ matrix.prefix }}"
 
       - name: Build
         run: ./dockcross cmake --build build/${{ matrix.trip }} -j 2

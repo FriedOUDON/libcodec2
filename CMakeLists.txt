@@ -60,7 +60,22 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Set default C flags.
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-strict-overflow")
+if(MSVC)
+    # Use MSVC-compatible warning/optimization flags.
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+    set(CMAKE_C_FLAGS_DEBUG "/Zi /Od /DDUMP")
+    set(CMAKE_C_FLAGS_RELEASE "/O2")
+else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-strict-overflow")
+
+    # -fPIC is implied on MinGW...
+    if(NOT WIN32)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+    endif()
+
+    set(CMAKE_C_FLAGS_DEBUG "-g -O2 -DDUMP")
+    set(CMAKE_C_FLAGS_RELEASE "-O3")
+endif()
 
 # Check for what C standard is supported.
 include(CheckCCompilerFlag)
@@ -68,14 +83,6 @@ include(CheckCCompilerFlag)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 #add_compile_options(-fno-builtin)
-
-# -fPIC is implied on MinGW...
-if(NOT WIN32)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-endif()
-
-set(CMAKE_C_FLAGS_DEBUG "-g -O2 -DDUMP")
-set(CMAKE_C_FLAGS_RELEASE "-O3")
 
 #
 # Setup Windows/MinGW specifics here.

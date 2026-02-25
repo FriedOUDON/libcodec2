@@ -91,7 +91,7 @@ else(CMAKE_CROSSCOMPILING)
 # Build code generator binaries. These do not get installed.
     # generate_codebook
     add_executable(generate_codebook generate_codebook.c)
-    target_link_libraries(generate_codebook m ${CMAKE_REQUIRED_LIBRARIES})
+    target_link_libraries(generate_codebook ${CMAKE_REQUIRED_LIBRARIES})
     # Make native builds available for cross-compiling.
     export(TARGETS generate_codebook
         FILE ${CMAKE_BINARY_DIR}/ImportExecutables.cmake)
@@ -189,14 +189,16 @@ add_library(codec2 ${CODEC2_SRCS})
 target_compile_definitions(codec2 PRIVATE
     __USE_ISOC99
 )
-target_compile_options(codec2 PRIVATE
-    -std=gnu99
-)
+if(NOT MSVC)
+    target_compile_options(codec2 PRIVATE
+        -std=gnu99
+        -fno-builtin
+    )
+endif()
 set_target_properties(codec2 PROPERTIES
     C_STANDARD 99
     C_STANDARD_REQUIRED YES
 )
-target_compile_options(codec2 PRIVATE -fno-builtin)
 
 if(UNIX)
     target_link_libraries(codec2 m)
@@ -243,16 +245,16 @@ target_link_libraries(c2sim ${CMAKE_REQUIRED_LIBRARIES} codec2)
 #endif()
 
 add_executable(fdmdv_get_test_bits fdmdv_get_test_bits.c fdmdv.c kiss_fft.c codec2_fft.c kiss_fftr.c)
-target_link_libraries(fdmdv_get_test_bits m ${CMAKE_REQUIRED_LIBRARIES})
+target_link_libraries(fdmdv_get_test_bits ${CMAKE_REQUIRED_LIBRARIES})
 
 add_executable(fdmdv_mod fdmdv_mod.c fdmdv.c kiss_fft.c codec2_fft.c kiss_fftr.c)
-target_link_libraries(fdmdv_mod m ${CMAKE_REQUIRED_LIBRARIES})
+target_link_libraries(fdmdv_mod ${CMAKE_REQUIRED_LIBRARIES})
 
 add_executable(fdmdv_demod fdmdv_demod.c fdmdv.c kiss_fft.c octave.c modem_stats.c codec2_fft.c kiss_fftr.c)
-target_link_libraries(fdmdv_demod m ${CMAKE_REQUIRED_LIBRARIES})
+target_link_libraries(fdmdv_demod ${CMAKE_REQUIRED_LIBRARIES})
 
 add_executable(fdmdv_put_test_bits fdmdv_put_test_bits.c fdmdv.c kiss_fft.c codec2_fft.c kiss_fftr.c)
-target_link_libraries(fdmdv_put_test_bits m ${CMAKE_REQUIRED_LIBRARIES})
+target_link_libraries(fdmdv_put_test_bits ${CMAKE_REQUIRED_LIBRARIES})
 
 add_executable(fdmdv_channel fdmdv_channel.c)
 target_link_libraries(fdmdv_channel ${CMAKE_REQUIRED_LIBRARIES} codec2)
@@ -270,7 +272,7 @@ add_executable(fsk_mod fsk_mod.c)
 target_link_libraries(fsk_mod ${CMAKE_REQUIRED_LIBRARIES} codec2)
 
 add_executable(fsk_mod_ext_vco fsk_mod_ext_vco.c)
-target_link_libraries(fsk_mod_ext_vco m ${CMAKE_REQUIRED_LIBRARIES})
+target_link_libraries(fsk_mod_ext_vco ${CMAKE_REQUIRED_LIBRARIES})
 
 add_executable(fsk_demod fsk_demod.c modem_probe.c octave.c)
 target_link_libraries(fsk_demod ${CMAKE_REQUIRED_LIBRARIES} codec2)
@@ -282,7 +284,7 @@ add_executable(fsk_put_test_bits fsk_put_test_bits.c)
 target_link_libraries(fsk_put_test_bits ${CMAKE_REQUIRED_LIBRARIES} codec2)
 
 add_executable(fm_demod fm_demod.c fm.c)
-target_link_libraries(fm_demod m ${CMAKE_REQUIRED_LIBRARIES})
+target_link_libraries(fm_demod ${CMAKE_REQUIRED_LIBRARIES})
 
 add_executable(cohpsk_mod cohpsk_mod.c)
 target_link_libraries(cohpsk_mod ${CMAKE_REQUIRED_LIBRARIES} codec2)
@@ -327,7 +329,7 @@ add_executable(cohpsk_ch cohpsk_ch.c)
 target_link_libraries(cohpsk_ch ${CMAKE_REQUIRED_LIBRARIES} codec2)
 
 add_executable(ldpc_noise ldpc_noise.c)
-target_link_libraries(ldpc_noise m)
+target_link_libraries(ldpc_noise ${CMAKE_REQUIRED_LIBRARIES})
 
 add_executable(ldpc_enc ldpc_enc.c)
 target_link_libraries(ldpc_enc ${CMAKE_REQUIRED_LIBRARIES} codec2)
@@ -343,7 +345,7 @@ target_link_libraries(drs232_ldpc ${CMAKE_REQUIRED_LIBRARIES} codec2)
 
 add_definitions(-DHORUS_L2_RX -DINTERLEAVER -DSCRAMBLER -DRUN_TIME_TABLES)
 add_executable(horus_demod horus_demod.c horus_api.c horus_l2.c golay23.c fsk.c kiss_fft.c)
-target_link_libraries(horus_demod m ${CMAKE_REQUIRED_LIBRARIES})
+target_link_libraries(horus_demod ${CMAKE_REQUIRED_LIBRARIES})
 
 install(TARGETS codec2 EXPORT codec2-config
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
