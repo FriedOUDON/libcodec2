@@ -20,6 +20,7 @@
 #include <math.h>
 #include <complex.h>
 
+#include "complex_compat.h"
 #include "filter.h"
 #include "filter_coef.h"
 #include "debug_alloc.h"

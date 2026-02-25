@@ -12,7 +12,7 @@
  *   }
  *
  */
-#include <complex.h>
+#include "complex_compat.h"
 
 static const complex float ofdm_wval[] = {
 CMPLXF(1.000000f, -0.000000f),

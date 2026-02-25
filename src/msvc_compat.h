@@ -36,26 +36,16 @@
 #ifdef I
 #undef I
 #endif
-#ifdef _Complex_I
-#define I _Complex_I
-#else
 #define I (1.0fi)
-#endif
-
-#ifdef _Complex_I
-#define CODEC2_COMPLEX_I _Complex_I
-#else
-#define CODEC2_COMPLEX_I I
-#endif
 
 #ifndef CMPLXF
-#define CMPLXF(real, imag) ((float complex)((float)(real) + (float)(imag) * I))
+#define CMPLXF(real, imag) __builtin_complex((float)(real), (float)(imag))
 #endif
 #ifndef CMPLX
-#define CMPLX(real, imag) ((double complex)((double)(real) + (double)(imag) * CODEC2_COMPLEX_I))
+#define CMPLX(real, imag) __builtin_complex((double)(real), (double)(imag))
 #endif
 #ifndef CMPLXL
-#define CMPLXL(real, imag) ((long double complex)((long double)(real) + (long double)(imag) * CODEC2_COMPLEX_I))
+#define CMPLXL(real, imag) __builtin_complex((long double)(real), (long double)(imag))
 #endif
 
 #ifdef crealf
