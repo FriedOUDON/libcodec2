@@ -65,6 +65,9 @@ if(MSVC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
     set(CMAKE_C_FLAGS_DEBUG "/Zi /Od /DDUMP")
     set(CMAKE_C_FLAGS_RELEASE "/O2")
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    # Force include a compatibility shim for clang-cl/MSVC C mode.
+    add_compile_options(/FI${CMAKE_SOURCE_DIR}/src/msvc_compat.h)
 else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-strict-overflow")
 
