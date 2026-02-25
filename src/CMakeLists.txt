@@ -150,6 +150,7 @@ set(CODEC2_SRCS
     gp_interleaver.c
     interldpc.c
     filter.c
+    clang_rt_compat.c
     horus_api.c
     horus_l2.c
     HRA_112_112.c
@@ -229,8 +230,16 @@ export(TARGETS codec2
     FILE ${CMAKE_BINARY_DIR}/codec2.cmake
 )
 
-#option(BUILD_CODEC2_TOOLS "Build codec2 command line tools" OFF)
-#if(BUILD_CODEC2_TOOLS)
+add_definitions(-DHORUS_L2_RX -DINTERLEAVER -DSCRAMBLER -DRUN_TIME_TABLES)
+
+if(MSVC AND NOT MINGW)
+    set(_build_codec2_tools_default OFF)
+else()
+    set(_build_codec2_tools_default ON)
+endif()
+option(BUILD_CODEC2_TOOLS "Build codec2 command line tools" ${_build_codec2_tools_default})
+
+if(BUILD_CODEC2_TOOLS)
 add_executable(c2demo c2demo.c)
 target_link_libraries(c2demo ${CMAKE_REQUIRED_LIBRARIES} codec2)
 
@@ -242,7 +251,6 @@ target_link_libraries(c2dec ${CMAKE_REQUIRED_LIBRARIES} codec2)
 
 add_executable(c2sim c2sim.c)
 target_link_libraries(c2sim ${CMAKE_REQUIRED_LIBRARIES} codec2)
-#endif()
 
 add_executable(fdmdv_get_test_bits fdmdv_get_test_bits.c fdmdv.c kiss_fft.c codec2_fft.c kiss_fftr.c)
 target_link_libraries(fdmdv_get_test_bits ${CMAKE_REQUIRED_LIBRARIES})
@@ -343,9 +351,9 @@ target_link_libraries(drs232 ${CMAKE_REQUIRED_LIBRARIES})
 add_executable(drs232_ldpc drs232_ldpc.c)
 target_link_libraries(drs232_ldpc ${CMAKE_REQUIRED_LIBRARIES} codec2)
 
-add_definitions(-DHORUS_L2_RX -DINTERLEAVER -DSCRAMBLER -DRUN_TIME_TABLES)
 add_executable(horus_demod horus_demod.c horus_api.c horus_l2.c golay23.c fsk.c kiss_fft.c)
 target_link_libraries(horus_demod ${CMAKE_REQUIRED_LIBRARIES})
+endif()
 
 install(TARGETS codec2 EXPORT codec2-config
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -358,16 +366,18 @@ install(TARGETS codec2 EXPORT codec2-config
 #    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/codec2
 #)
 
-install(TARGETS
-    c2enc
-    c2dec
-    fdmdv_get_test_bits
-    fdmdv_mod fdmdv_demod
-    fm_demod
-    fsk_mod
-    fdmdv_put_test_bits
-    insert_errors
-    drs232
-    drs232_ldpc
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+if(BUILD_CODEC2_TOOLS)
+    install(TARGETS
+        c2enc
+        c2dec
+        fdmdv_get_test_bits
+        fdmdv_mod fdmdv_demod
+        fm_demod
+        fsk_mod
+        fdmdv_put_test_bits
+        insert_errors
+        drs232
+        drs232_ldpc
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+endif()
