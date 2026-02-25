@@ -193,7 +193,7 @@ jobs:
             -DLPCNET=${{ env.LPCNET }} `
             -DBUILD_SHARED_LIBS=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} `
-            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\install\windows-msvc-x64"
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\staging\windows-msvc-x64"
         shell: pwsh
 
       - name: Verify compiler
@@ -233,7 +233,7 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           $trip = "windows-msvc-x64"
-          $prefix = Join-Path "${{ github.workspace }}" "install\$trip"
+          $prefix = Join-Path "${{ github.workspace }}" "staging\$trip"
           $out = Join-Path "${{ github.workspace }}" "dist"
           $pkgDir = Join-Path $out "libcodec2-$tag-$trip"
 
@@ -299,7 +299,7 @@ jobs:
             -DLPCNET=${{ env.LPCNET }} \
             -DBUILD_SHARED_LIBS=ON \
             -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
-            -DCMAKE_INSTALL_PREFIX="$WS/install/${TRIP}"
+            -DCMAKE_INSTALL_PREFIX="$WS/staging/${TRIP}"
 
           cmake --build "$WS/build/mingw64" -j 2
           cmake --install "$WS/build/mingw64"
@@ -308,7 +308,7 @@ jobs:
           PKG="libcodec2-${TAG}-${TRIP}"
           rm -rf "$OUT" && mkdir -p "$OUT/$PKG/LICENSES"
 
-          PREFIX="$WS/install/${TRIP}"
+          PREFIX="$WS/staging/${TRIP}"
           [ -d "$PREFIX/include" ] && rsync -a "$PREFIX/include/" "$OUT/$PKG/include/" || true
           [ -d "$PREFIX/lib" ] && rsync -a "$PREFIX/lib/" "$OUT/$PKG/lib/" || true
           [ -d "$PREFIX/bin" ] && rsync -a "$PREFIX/bin/" "$OUT/$PKG/bin/" || true

@@ -9,7 +9,20 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES @CMAKE_FIND_LIBRARY_SUFFIXES@)
 set(CMAKE_FIND_LIBRARY_PREFIXES @CMAKE_FIND_LIBRARY_PREFIXES@)
 set(CMAKE_SYSTEM_LIBRARY_PATH @CMAKE_SYSTEM_LIBRARY_PATH@)
 set(CMAKE_FIND_ROOT_PATH @CMAKE_FIND_ROOT_PATH@)
-set(CODEC2_DLL ${CMAKE_BINARY_DIR}/src/libcodec2.dll)
+set(CODEC2_DLL "")
+foreach(_candidate
+    "${CMAKE_BINARY_DIR}/src/codec2.dll"
+    "${CMAKE_BINARY_DIR}/src/libcodec2.dll")
+    if(EXISTS "${_candidate}")
+        set(CODEC2_DLL "${_candidate}")
+        break()
+    endif()
+endforeach()
+
+if(NOT CODEC2_DLL)
+    message(WARNING "codec2 runtime DLL not found under ${CMAKE_BINARY_DIR}/src; skipping dependency scan")
+    return()
+endif()
 
 include(GetPrerequisites)
 get_prerequisites(${CODEC2_DLL} _deps 1 0 "" "")
