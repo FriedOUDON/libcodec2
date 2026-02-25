@@ -185,12 +185,20 @@ jobs:
       - name: Configure
         run: |
           cmake -S . -B build\msvc -G Ninja `
-            -DCMAKE_C_COMPILER=clang-cl `
+            -DCMAKE_C_COMPILER:FILEPATH=clang-cl `
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
             -DLPCNET=${{ env.LPCNET }} `
             -DBUILD_SHARED_LIBS=ON `
             -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} `
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\install\windows-msvc-x64"
+        shell: pwsh
+
+      - name: Verify compiler
+        run: |
+          $line = (Get-Content build\msvc\CMakeCache.txt | Select-String "CMAKE_C_COMPILER:FILEPATH").Line
+          if (-not $line) { throw "CMAKE_C_COMPILER not found in CMakeCache.txt" }
+          Write-Host $line
+          if ($line -notmatch "clang-cl") { throw "Expected clang-cl, got: $line" }
         shell: pwsh
 
       - name: Build
