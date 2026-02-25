@@ -184,8 +184,11 @@ jobs:
 
       - name: Configure
         run: |
+          $clang = (Get-Command clang-cl).Source
+          if (-not $clang) { throw "clang-cl not found in PATH" }
+          Write-Host "Using clang-cl: $clang"
           cmake -S . -B build\msvc -G Ninja `
-            -DCMAKE_C_COMPILER:FILEPATH=clang-cl `
+            -DCMAKE_C_COMPILER:FILEPATH="$clang" `
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
             -DLPCNET=${{ env.LPCNET }} `
             -DBUILD_SHARED_LIBS=ON `
@@ -195,10 +198,27 @@ jobs:
 
       - name: Verify compiler
         run: |
-          $line = (Get-Content build\msvc\CMakeCache.txt | Select-String "CMAKE_C_COMPILER:FILEPATH").Line
-          if (-not $line) { throw "CMAKE_C_COMPILER not found in CMakeCache.txt" }
-          Write-Host $line
-          if ($line -notmatch "clang-cl") { throw "Expected clang-cl, got: $line" }
+          $compiler = $null
+
+          $cacheLine = (Get-Content build\msvc\CMakeCache.txt | Select-String '^CMAKE_C_COMPILER:[^=]*=' | Select-Object -First 1)
+          if ($cacheLine) {
+            $compiler = ($cacheLine.Line -split '=', 2)[1].Trim()
+            Write-Host "Compiler from CMakeCache: $compiler"
+          }
+
+          if (-not $compiler) {
+            $ccFile = Get-ChildItem build\msvc\CMakeFiles -Recurse -Filter CMakeCCompiler.cmake | Select-Object -First 1
+            if ($ccFile) {
+              $ccLine = (Get-Content $ccFile.FullName | Select-String 'set\(CMAKE_C_COMPILER "([^"]+)"\)' | Select-Object -First 1)
+              if ($ccLine -and $ccLine.Line -match 'set\(CMAKE_C_COMPILER "([^"]+)"\)') {
+                $compiler = $Matches[1]
+                Write-Host "Compiler from CMakeCCompiler.cmake: $compiler"
+              }
+            }
+          }
+
+          if (-not $compiler) { throw "Unable to determine C compiler from CMake files" }
+          if ($compiler -notmatch '(?i)clang-cl') { throw "Expected clang-cl, got: $compiler" }
         shell: pwsh
 
       - name: Build
