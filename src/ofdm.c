@@ -65,10 +65,10 @@ static void ofdm_demod_core(struct OFDM *, int *);
  * QPSK Quadrant bit-pair values - Gray Coded
  */
 static const complex float constellation[] = {
-    1.0f + 0.0f * I,
-    0.0f + 1.0f * I,
-    0.0f - 1.0f * I,
-    -1.0f + 0.0f * I
+    CMPLXF(1.0f, 0.0f),
+    CMPLXF(0.0f, 1.0f),
+    CMPLXF(0.0f, -1.0f),
+    CMPLXF(-1.0f, 0.0f)
 };
 
 /*
@@ -300,7 +300,7 @@ struct OFDM *ofdm_create(const struct OFDM_CONFIG *config) {
     /* There are only 64 pilot values available */
 
     for (i = 0; i < (ofdm_nc + 2); i++) {
-        ofdm->pilots[i] = ((float) pilotvalues[i]) + 0.0f * I;
+        ofdm->pilots[i] = CMPLXF((float) pilotvalues[i], 0.0f);
     }
 
     /* carrier tables for up and down conversion */
@@ -633,19 +633,19 @@ static int est_timing(struct OFDM *ofdm, complex float *rx, int length,
 
 	arm_dot_prod_f32(&rx_real[i], wvec_pilot_real, ofdm_m + ofdm_ncp, &re);
 	arm_dot_prod_f32(&rx_real[i], wvec_pilot_imag, ofdm_m + ofdm_ncp, &im);
-	corr_st = re + im * I;
+	corr_st = CMPLXF(re, im);
 
 	arm_dot_prod_f32(&rx_real[i+ ofdm_samplesperframe], wvec_pilot_real, ofdm_m + ofdm_ncp, &re);
 	arm_dot_prod_f32(&rx_real[i+ ofdm_samplesperframe], wvec_pilot_imag, ofdm_m + ofdm_ncp, &im);
-	corr_en = re + im * I;
+	corr_en = CMPLXF(re, im);
 #else
 	float re,im;
 
 	arm_cmplx_dot_prod_f32(&rx[i], wvec_pilot, ofdm_m + ofdm_ncp, &re, &im);
-	corr_st = re + im * I;
+	corr_st = CMPLXF(re, im);
 
 	arm_cmplx_dot_prod_f32(&rx[i+ ofdm_samplesperframe], wvec_pilot, ofdm_m + ofdm_ncp, &re, &im);
-	corr_en = re + im * I;
+	corr_en = CMPLXF(re, im);
 #endif        
 #else	
 	for (j = 0; j < (ofdm_m + ofdm_ncp); j++) {

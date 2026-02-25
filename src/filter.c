@@ -24,7 +24,7 @@
 #include "filter_coef.h"
 #include "debug_alloc.h"
 
-#define cmplx(value) (cosf(value) + sinf(value) * I)
+#define cmplx(value) CMPLXF(cosf(value), sinf(value))
 
 /*
  * This is a library of filter functions. They were copied from Quisk and converted to single precision.

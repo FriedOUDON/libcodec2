@@ -225,7 +225,8 @@ int count_uncoded_errors(struct LDPC *ldpc, struct OFDM_CONFIG *config, int Nerr
     for (j = 0; j < interleave_frames; j++) {
         for (i = 0; i < coded_syms_per_frame; i++) {
             int bits[2];
-            complex float s = codeword_symbols_de[j * coded_syms_per_frame + i].real + I * codeword_symbols_de[j * coded_syms_per_frame + i].imag;
+            complex float s = CMPLXF(codeword_symbols_de[j * coded_syms_per_frame + i].real,
+                                     codeword_symbols_de[j * coded_syms_per_frame + i].imag);
             qpsk_demod(s, bits);
             rx_bits_raw[config->bps * i] = bits[1];
             rx_bits_raw[config->bps * i + 1] = bits[0];

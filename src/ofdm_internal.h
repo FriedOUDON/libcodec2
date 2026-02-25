@@ -47,8 +47,8 @@ extern "C"
 #define TAU         (2.0f * M_PI)
 #define ROT45       (M_PI / 4.0f)
 
-#define cmplx(value) (cosf(value) + sinf(value) * I)
-#define cmplxconj(value) (cosf(value) + sinf(value) * -I)
+#define cmplx(value) CMPLXF(cosf(value), sinf(value))
+#define cmplxconj(value) CMPLXF(cosf(value), -sinf(value))
 
 /* modem state machine states */
 typedef enum {
