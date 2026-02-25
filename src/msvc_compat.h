@@ -21,17 +21,18 @@
 #endif
 
 /*
- * UCRT can define "complex" as "_complex" in C mode, which breaks C99
- * complex declarations in this codebase. Restore C99 meaning.
+ * clang-cl with UCRT headers can mix two incompatible complex models:
+ * - UCRT complex APIs based on _Fcomplex structs
+ * - C99 _Complex float used by this codebase
+ *
+ * Force C99 operators/functions when building with clang-cl.
  */
+#if defined(__clang__)
 #ifdef complex
 #undef complex
 #endif
 #define complex _Complex
 
-/*
- * Keep the imaginary unit macro usable in arithmetic expressions.
- */
 #ifdef I
 #undef I
 #endif
@@ -39,6 +40,45 @@
 #define I _Complex_I
 #else
 #define I (1.0fi)
+#endif
+
+#ifdef _Complex_I
+#define CODEC2_COMPLEX_I _Complex_I
+#else
+#define CODEC2_COMPLEX_I I
+#endif
+
+#ifndef CMPLXF
+#define CMPLXF(real, imag) ((float complex)((float)(real) + (float)(imag) * I))
+#endif
+#ifndef CMPLX
+#define CMPLX(real, imag) ((double complex)((double)(real) + (double)(imag) * CODEC2_COMPLEX_I))
+#endif
+#ifndef CMPLXL
+#define CMPLXL(real, imag) ((long double complex)((long double)(real) + (long double)(imag) * CODEC2_COMPLEX_I))
+#endif
+
+#ifdef crealf
+#undef crealf
+#endif
+#ifdef cimagf
+#undef cimagf
+#endif
+#ifdef conjf
+#undef conjf
+#endif
+#ifdef cabsf
+#undef cabsf
+#endif
+#ifdef cargf
+#undef cargf
+#endif
+
+#define crealf(z) ((float)(__real__(z)))
+#define cimagf(z) ((float)(__imag__(z)))
+#define conjf(z) (__builtin_conjf(z))
+#define cabsf(z) (__builtin_cabsf(z))
+#define cargf(z) (__builtin_cargf(z))
 #endif
 #endif
 

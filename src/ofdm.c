@@ -58,8 +58,12 @@ static void ofdm_demod_core(struct OFDM *, int *);
 
 /* Defines */
 
+#ifndef max
 #define max( a, b ) ( ((a) > (b)) ? (a) : (b) )
+#endif
+#ifndef min
 #define min( a, b ) ( ((a) < (b)) ? (a) : (b) )
+#endif
 
 /*
  * QPSK Quadrant bit-pair values - Gray Coded
