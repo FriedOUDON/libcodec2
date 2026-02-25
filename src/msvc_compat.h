@@ -7,6 +7,7 @@
 #define _USE_MATH_DEFINES
 #endif
 #include <math.h>
+#include <complex.h>
 
 /* MSVC stack allocator name. */
 #include <malloc.h>
@@ -27,6 +28,18 @@
 #undef complex
 #endif
 #define complex _Complex
+
+/*
+ * Keep the imaginary unit macro usable in arithmetic expressions.
+ */
+#ifdef I
+#undef I
+#endif
+#ifdef _Complex_I
+#define I _Complex_I
+#else
+#define I (1.0fi)
+#endif
 #endif
 
 #endif
