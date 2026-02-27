@@ -55,10 +55,10 @@ jobs:
           rm -rf "${OUT}" && mkdir -p "${OUT}/${PKG}/LICENSES"
           [ -d "${PREFIX}/include" ] && rsync -a "${PREFIX}/include/" "${OUT}/${PKG}/include/" || true
           if [ -d "${PREFIX}/lib" ]; then
-            rsync -a "${PREFIX}/lib/" "${OUT}/${PKG}/lib/"
+            rsync -aL "${PREFIX}/lib/" "${OUT}/${PKG}/lib/"
           elif [ -d "${PREFIX}/lib64" ]; then
             mkdir -p "${OUT}/${PKG}/lib"
-            rsync -a "${PREFIX}/lib64/" "${OUT}/${PKG}/lib/"
+            rsync -aL "${PREFIX}/lib64/" "${OUT}/${PKG}/lib/"
           else
             echo "ERROR: no lib dir under ${PREFIX}" >&2; exit 1
           fi
@@ -133,10 +133,10 @@ jobs:
           rm -rf "${OUT}" && mkdir -p "${OUT}/${PKG}/LICENSES"
           [ -d "${PREFIX}/include" ] && rsync -a "${PREFIX}/include/" "${OUT}/${PKG}/include/" || true
           if [ -d "${PREFIX}/lib" ]; then
-            rsync -a "${PREFIX}/lib/" "${OUT}/${PKG}/lib/"
+            rsync -aL "${PREFIX}/lib/" "${OUT}/${PKG}/lib/"
           elif [ -d "${PREFIX}/lib64" ]; then
             mkdir -p "${OUT}/${PKG}/lib"
-            rsync -a "${PREFIX}/lib64/" "${OUT}/${PKG}/lib/"
+            rsync -aL "${PREFIX}/lib64/" "${OUT}/${PKG}/lib/"
           else
             echo "ERROR: no lib dir under ${PREFIX}" >&2; exit 1
           fi
@@ -360,4 +360,19 @@ jobs:
             release-assets/**/*.tar.gz.sha256
             release-assets/**/*.zip
             release-assets/**/*.zip.sha256
+          body: |
+            ## incomudon向け: `.so` / `.dll` の取り出し方（初心者向け）
+
+            1. このページの `Assets` を開き、使う環境のファイルをダウンロードします。
+            2. ダウンロードしたファイルを解凍します。
+               - Windows: `...windows-*.zip`
+               - Linux / Android: `...linux-*.tar.gz` / `...android-*.tar.gz`
+            3. ライブラリ本体は次の場所にあります。
+               - Windows: `bin/*.dll`（例: `codec2.dll`）
+               - Linux / Android: `lib/libcodec2.so`
+            4. Android はアプリの ABI と同じものを選んでください。
+               - `arm64-v8a`: 多くの実機
+               - `armeabi-v7a`: 32bit 実機
+               - `x86` / `x86_64`: エミュレータ向け
+            5. `include/` はヘッダファイルです。通常は `.so` / `.dll` を使えばOKです。
           generate_release_notes: true
