@@ -84,6 +84,75 @@ jobs:
           if-no-files-found: error
 
   # -----------------------------
+  # Linux (native x86_64, musl)
+  # -----------------------------
+  build-linux-musl-x64:
+    name: Linux x86_64 (musl)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build rsync musl-tools
+
+      - name: Configure
+        run: |
+          cmake -S . -B build/linux-musl-x64 -G Ninja \
+            -DCMAKE_C_COMPILER=musl-gcc \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DLPCNET=${{ env.LPCNET }} \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install/linux-musl-x64"
+
+      - name: Build
+        run: cmake --build build/linux-musl-x64 -j 2
+
+      - name: Install (staging)
+        run: cmake --install build/linux-musl-x64
+
+      - name: Package
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          TRIP="linux-musl-x86_64"
+          PREFIX="${{ github.workspace }}/install/linux-musl-x64"
+          OUT="${{ github.workspace }}/dist"
+          PKG="libcodec2-${TAG}-${TRIP}"
+
+          rm -rf "${OUT}" && mkdir -p "${OUT}/${PKG}/LICENSES"
+          [ -d "${PREFIX}/include" ] && rsync -a "${PREFIX}/include/" "${OUT}/${PKG}/include/" || true
+          if [ -d "${PREFIX}/lib" ]; then
+            rsync -aL "${PREFIX}/lib/" "${OUT}/${PKG}/lib/"
+          elif [ -d "${PREFIX}/lib64" ]; then
+            mkdir -p "${OUT}/${PKG}/lib"
+            rsync -aL "${PREFIX}/lib64/" "${OUT}/${PKG}/lib/"
+          else
+            echo "ERROR: no lib dir under ${PREFIX}" >&2; exit 1
+          fi
+
+          cp -a COPYING THIRD_PARTY_NOTICES.md "${OUT}/${PKG}/LICENSES/"
+          {
+            echo "tag: ${TAG}"
+            echo "commit: ${GITHUB_SHA}"
+            echo "target: ${TRIP}"
+            echo "cmake: $(cmake --version | head -n 1)"
+            echo "configure_flags: -DCMAKE_C_COMPILER=musl-gcc -DLPCNET=${{ env.LPCNET }} -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}"
+          } > "${OUT}/${PKG}/BUILDINFO.txt"
+
+          (cd "${OUT}" && tar -czf "${PKG}.tar.gz" "${PKG}")
+          (cd "${OUT}" && sha256sum "${PKG}.tar.gz" > "${PKG}.tar.gz.sha256")
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-musl-x86_64
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+          if-no-files-found: error
+
+  # -----------------------------
   # Linux (Raspberry Pi armv7 / arm64 via dockcross)
   # -----------------------------
   build-linux-dockcross:
@@ -340,6 +409,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-linux-x64
+      - build-linux-musl-x64
       - build-linux-dockcross
       - build-windows-msvc
       - build-windows-mingw
