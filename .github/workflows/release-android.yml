@@ -13,15 +13,15 @@ env:
   # r27 toolchains can generate runtime-incompatible PLT behavior on some
   # Android 12 vendor linkers when .so is loaded from app-private storage.
   # Use a conservative NDK/API combo for maximum compatibility.
-  NDK_VERSION: r25c
+  NDK_VERSION: r23c
   ANDROID_PLATFORM: android-21
   BUILD_TYPE: Release
   CMAKE_POLICY_VERSION_MINIMUM: "3.5"
   # Safer Release flags for Android runtime-loaded .so:
   # avoid aggressive optimizations that can trigger UB in older devices/NDKs.
   C_FLAGS_ANDROID_RELEASE: >-
-    -O2 -DNDEBUG -fPIC -fno-strict-aliasing -fwrapv -fno-strict-overflow -fno-fast-math
-    -mbranch-protection=none
+    -O0 -DNDEBUG -fPIC -fno-strict-aliasing -fwrapv -fno-strict-overflow -fno-fast-math
+    -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0
     -DCODEC2_MODE_EN_DEFAULT=0
     -DCODEC2_MODE_3200_EN=1
     -DCODEC2_MODE_2400_EN=1
@@ -31,7 +31,6 @@ env:
   SHARED_LD_FLAGS_ANDROID_RELEASE: >-
     -Wl,-z,now -Wl,-z,relro -Wl,--no-undefined
     -Wl,--pack-dyn-relocs=none
-    -Wl,-Bsymbolic-functions -Wl,-Bsymbolic
 
 jobs:
   build-android:
