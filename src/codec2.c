@@ -110,6 +110,11 @@ static void ear_protection(float in_out[], int n);
 
 
 //Don't create CODEC2_MODE_450PWB for Encoding as it has undefined behavior !
+int incomudon_codec2_abi_version(void)
+{
+    return 2026022801;
+}
+
 struct CODEC2 * codec2_create(int mode)
 {
     struct CODEC2 *c2;

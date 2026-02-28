@@ -107,6 +107,7 @@ void codec2_decode(struct CODEC2 *codec2_state, short speech_out[], const unsign
 void codec2_decode_ber(struct CODEC2 *codec2_state, short speech_out[], const unsigned char *bits, float ber_est);
 int  codec2_samples_per_frame(struct CODEC2 *codec2_state);
 int  codec2_bits_per_frame(struct CODEC2 *codec2_state);
+int  incomudon_codec2_abi_version(void);
 
 void codec2_set_lpc_post_filter(struct CODEC2 *codec2_state, int enable, int bass_boost, float beta, float gamma);
 int  codec2_get_spare_bit_index(struct CODEC2 *codec2_state);
