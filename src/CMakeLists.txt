@@ -204,6 +204,16 @@ set_target_properties(codec2 PROPERTIES
 if(UNIX)
     target_link_libraries(codec2 m)
 endif(UNIX)
+
+if(ANDROID)
+    # Runtime-loaded on diverse vendor linkers: force eager PLT binding and
+    # conservative relocation packing for compatibility.
+    target_link_options(codec2 PRIVATE
+        -Wl,-z,now
+        -Wl,--pack-dyn-relocs=none
+    )
+endif()
+
 if(LPCNET AND lpcnetfreedv_FOUND)
     target_link_libraries(codec2 lpcnetfreedv)
 endif()
