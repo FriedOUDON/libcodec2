@@ -14,6 +14,16 @@ env:
   ANDROID_PLATFORM: android-23
   BUILD_TYPE: Release
   CMAKE_POLICY_VERSION_MINIMUM: "3.5"
+  # Safer Release flags for Android runtime-loaded .so:
+  # avoid aggressive optimizations that can trigger UB in older devices/NDKs.
+  C_FLAGS_ANDROID_RELEASE: >-
+    -O2 -DNDEBUG -fno-strict-aliasing -fwrapv -fno-strict-overflow -fno-fast-math
+    -DCODEC2_MODE_EN_DEFAULT=0
+    -DCODEC2_MODE_3200_EN=1
+    -DCODEC2_MODE_2400_EN=1
+    -DCODEC2_MODE_1600_EN=1
+    -DCODEC2_MODE_700C_EN=1
+    -DCODEC2_MODE_450_EN=1
 
 jobs:
   build-android:
@@ -85,6 +95,7 @@ jobs:
             -DANDROID_ABI="${{ matrix.abi }}" \
             -DANDROID_PLATFORM="${{ env.ANDROID_PLATFORM }}" \
             -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DCMAKE_C_FLAGS_RELEASE="${{ env.C_FLAGS_ANDROID_RELEASE }}" \
             -DBUILD_SHARED_LIBS=ON \
             -DCMAKE_POLICY_VERSION_MINIMUM="${{ env.CMAKE_POLICY_VERSION_MINIMUM }}" \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install/${{ matrix.abi }}"

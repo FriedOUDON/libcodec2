@@ -181,10 +181,37 @@ struct CODEC2 * codec2_create(int mode)
     for(i=0; i<2*n_samp; i++)
 	c2->Sn_[i] = 0;
     c2->fft_fwd_cfg = codec2_fft_alloc(FFT_ENC, 0, NULL, NULL);
+    if (c2->fft_fwd_cfg == NULL) {
+        FREE(c2->Pn);
+        FREE(c2->Sn_);
+        FREE(c2->w);
+        FREE(c2->Sn);
+        FREE(c2);
+        return NULL;
+    }
     c2->fftr_fwd_cfg = codec2_fftr_alloc(FFT_ENC, 0, NULL, NULL);
+    if (c2->fftr_fwd_cfg == NULL) {
+        codec2_fft_free(c2->fft_fwd_cfg);
+        FREE(c2->Pn);
+        FREE(c2->Sn_);
+        FREE(c2->w);
+        FREE(c2->Sn);
+        FREE(c2);
+        return NULL;
+    }
     make_analysis_window(&c2->c2const, c2->fft_fwd_cfg, c2->w,c2->W);
     make_synthesis_window(&c2->c2const, c2->Pn);
     c2->fftr_inv_cfg = codec2_fftr_alloc(FFT_DEC, 1, NULL, NULL);
+    if (c2->fftr_inv_cfg == NULL) {
+        codec2_fftr_free(c2->fftr_fwd_cfg);
+        codec2_fft_free(c2->fft_fwd_cfg);
+        FREE(c2->Pn);
+        FREE(c2->Sn_);
+        FREE(c2->w);
+        FREE(c2->Sn);
+        FREE(c2);
+        return NULL;
+    }
     quantise_init();
     c2->prev_f0_enc = 1/P_MAX_S;
     c2->bg_est = 0.0;
