@@ -1,4 +1,4 @@
-name: Release (Windows + Linux prebuilt)
+name: Release (Windows + Linux + Apple prebuilt)
 
 on:
   push:
@@ -230,6 +230,146 @@ jobs:
           if-no-files-found: error
 
   # -----------------------------
+  # macOS (native, universal)
+  # -----------------------------
+  build-macos-universal:
+    name: macOS universal (arm64 + x86_64)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          brew install ninja || true
+
+      - name: Configure
+        run: |
+          cmake -S . -B build/macos-universal -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DLPCNET=${{ env.LPCNET }} \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_CODEC2_TOOLS=ON \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/staging/macos-universal"
+
+      - name: Build
+        run: cmake --build build/macos-universal -j 2
+
+      - name: Install (staging)
+        run: cmake --install build/macos-universal
+
+      - name: Package
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          TRIP="macos-universal"
+          PREFIX="${{ github.workspace }}/staging/macos-universal"
+          OUT="${{ github.workspace }}/dist"
+          PKG="libcodec2-${TAG}-${TRIP}"
+
+          rm -rf "${OUT}" && mkdir -p "${OUT}/${PKG}/LICENSES"
+          [ -d "${PREFIX}/include" ] && rsync -a "${PREFIX}/include/" "${OUT}/${PKG}/include/" || true
+          if [ -d "${PREFIX}/lib" ]; then
+            rsync -aL "${PREFIX}/lib/" "${OUT}/${PKG}/lib/"
+          elif [ -d "${PREFIX}/lib64" ]; then
+            mkdir -p "${OUT}/${PKG}/lib"
+            rsync -aL "${PREFIX}/lib64/" "${OUT}/${PKG}/lib/"
+          else
+            echo "ERROR: no lib dir under ${PREFIX}" >&2; exit 1
+          fi
+          [ -d "${PREFIX}/bin" ] && rsync -a "${PREFIX}/bin/" "${OUT}/${PKG}/bin/" || true
+
+          cp -a COPYING THIRD_PARTY_NOTICES.md "${OUT}/${PKG}/LICENSES/"
+          {
+            echo "tag: ${TAG}"
+            echo "commit: ${GITHUB_SHA}"
+            echo "target: ${TRIP}"
+            echo "configure_flags: -DLPCNET=${{ env.LPCNET }} -DBUILD_SHARED_LIBS=ON -DBUILD_CODEC2_TOOLS=ON -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64 -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}"
+          } > "${OUT}/${PKG}/BUILDINFO.txt"
+
+          (cd "${OUT}" && tar -czf "${PKG}.tar.gz" "${PKG}")
+          (cd "${OUT}" && shasum -a 256 "${PKG}.tar.gz" > "${PKG}.tar.gz.sha256")
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-universal
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+          if-no-files-found: error
+
+  # -----------------------------
+  # iOS (device arm64, static lib)
+  # -----------------------------
+  build-ios-arm64:
+    name: iOS arm64 (iphoneos)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          brew install ninja || true
+
+      - name: Configure
+        run: |
+          cmake -S . -B build/ios-arm64 -G Ninja \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DLPCNET=${{ env.LPCNET }} \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DBUILD_CODEC2_TOOLS=OFF \
+            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/staging/ios-arm64"
+
+      - name: Build
+        run: cmake --build build/ios-arm64 -j 2
+
+      - name: Install (staging)
+        run: cmake --install build/ios-arm64
+
+      - name: Package
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          TRIP="ios-arm64"
+          PREFIX="${{ github.workspace }}/staging/ios-arm64"
+          OUT="${{ github.workspace }}/dist"
+          PKG="libcodec2-${TAG}-${TRIP}"
+
+          rm -rf "${OUT}" && mkdir -p "${OUT}/${PKG}/LICENSES"
+          [ -d "${PREFIX}/include" ] && rsync -a "${PREFIX}/include/" "${OUT}/${PKG}/include/" || true
+          if [ -d "${PREFIX}/lib" ]; then
+            rsync -aL "${PREFIX}/lib/" "${OUT}/${PKG}/lib/"
+          elif [ -d "${PREFIX}/lib64" ]; then
+            mkdir -p "${OUT}/${PKG}/lib"
+            rsync -aL "${PREFIX}/lib64/" "${OUT}/${PKG}/lib/"
+          else
+            echo "ERROR: no lib dir under ${PREFIX}" >&2; exit 1
+          fi
+
+          cp -a COPYING THIRD_PARTY_NOTICES.md "${OUT}/${PKG}/LICENSES/"
+          {
+            echo "tag: ${TAG}"
+            echo "commit: ${GITHUB_SHA}"
+            echo "target: ${TRIP}"
+            echo "configure_flags: -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 -DLPCNET=${{ env.LPCNET }} -DBUILD_SHARED_LIBS=OFF -DBUILD_CODEC2_TOOLS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}"
+          } > "${OUT}/${PKG}/BUILDINFO.txt"
+
+          (cd "${OUT}" && tar -czf "${PKG}.tar.gz" "${PKG}")
+          (cd "${OUT}" && shasum -a 256 "${PKG}.tar.gz" > "${PKG}.tar.gz.sha256")
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-arm64
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+          if-no-files-found: error
+
+  # -----------------------------
   # Windows (clang-cl, MSVC ABI x64)
   # -----------------------------
   build-windows-msvc:
@@ -411,6 +551,8 @@ jobs:
       - build-linux-x64
       - build-linux-musl-x64
       - build-linux-dockcross
+      - build-macos-universal
+      - build-ios-arm64
       - build-windows-msvc
       - build-windows-mingw
     if: github.ref_type == 'tag'
