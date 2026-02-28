@@ -25,7 +25,7 @@
   along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 #include <math.h>
-#include <complex.h>
+#include "complex_compat.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -33,7 +33,6 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-#include <complex.h>
 
 #include "comp.h"
 #include "ofdm_internal.h"

@@ -26,7 +26,7 @@
   along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 #include <math.h>
-#include <complex.h>
+#include "complex_compat.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdbool.h>

@@ -30,7 +30,7 @@
 
 /* Includes */
     
-#include <complex.h>
+#include "complex_compat.h"
 #include <stdbool.h>
 #include <stdint.h>
   
