@@ -115,6 +115,66 @@ int incomudon_codec2_abi_version(void)
     return 2026022801;
 }
 
+static void incomudon_codec2_bind_callbacks(struct CODEC2 *c2, int mode)
+{
+    if (c2 == NULL)
+        return;
+
+    c2->encode = NULL;
+    c2->decode = NULL;
+    c2->decode_ber = NULL;
+
+    switch (mode)
+    {
+    case CODEC2_MODE_3200:
+        c2->encode = codec2_encode_3200;
+        c2->decode = codec2_decode_3200;
+        break;
+    case CODEC2_MODE_2400:
+        c2->encode = codec2_encode_2400;
+        c2->decode = codec2_decode_2400;
+        break;
+    case CODEC2_MODE_1600:
+        c2->encode = codec2_encode_1600;
+        c2->decode = codec2_decode_1600;
+        break;
+    case CODEC2_MODE_1400:
+        c2->encode = codec2_encode_1400;
+        c2->decode = codec2_decode_1400;
+        break;
+    case CODEC2_MODE_1300:
+        c2->encode = codec2_encode_1300;
+        c2->decode_ber = codec2_decode_1300;
+        break;
+    case CODEC2_MODE_1200:
+        c2->encode = codec2_encode_1200;
+        c2->decode = codec2_decode_1200;
+        break;
+    case CODEC2_MODE_700:
+        c2->encode = codec2_encode_700;
+        c2->decode = codec2_decode_700;
+        break;
+    case CODEC2_MODE_700B:
+        c2->encode = codec2_encode_700b;
+        c2->decode = codec2_decode_700b;
+        break;
+    case CODEC2_MODE_700C:
+        c2->encode = codec2_encode_700c;
+        c2->decode = codec2_decode_700c;
+        break;
+    case CODEC2_MODE_450:
+        c2->encode = codec2_encode_450;
+        c2->decode = codec2_decode_450;
+        break;
+    case CODEC2_MODE_450PWB:
+        c2->encode = codec2_encode_450;
+        c2->decode = codec2_decode_450pwb;
+        break;
+    default:
+        break;
+    }
+}
+
 struct CODEC2 * codec2_create(int mode)
 {
     struct CODEC2 *c2;
@@ -145,9 +205,7 @@ struct CODEC2 * codec2_create(int mode)
 	return NULL;
 
     c2->mode = mode;
-    c2->encode = NULL;
-    c2->decode = NULL;
-    c2->decode_ber = NULL;
+    incomudon_codec2_bind_callbacks(c2, mode);
 
     /* store constants in a few places for convenience */
     
@@ -308,58 +366,7 @@ struct CODEC2 * codec2_create(int mode)
 
     c2->fmlfeat = NULL;
 
-    /* Bind codec callbacks from requested mode directly.
-       This avoids runtime mis-selection when mode flags drift in external builds. */
-    switch (mode)
-    {
-    case CODEC2_MODE_3200:
-        c2->encode = codec2_encode_3200;
-        c2->decode = codec2_decode_3200;
-        break;
-    case CODEC2_MODE_2400:
-        c2->encode = codec2_encode_2400;
-        c2->decode = codec2_decode_2400;
-        break;
-    case CODEC2_MODE_1600:
-        c2->encode = codec2_encode_1600;
-        c2->decode = codec2_decode_1600;
-        break;
-    case CODEC2_MODE_1400:
-        c2->encode = codec2_encode_1400;
-        c2->decode = codec2_decode_1400;
-        break;
-    case CODEC2_MODE_1300:
-        c2->encode = codec2_encode_1300;
-        c2->decode_ber = codec2_decode_1300;
-        break;
-    case CODEC2_MODE_1200:
-        c2->encode = codec2_encode_1200;
-        c2->decode = codec2_decode_1200;
-        break;
-    case CODEC2_MODE_700:
-        c2->encode = codec2_encode_700;
-        c2->decode = codec2_decode_700;
-        break;
-    case CODEC2_MODE_700B:
-        c2->encode = codec2_encode_700b;
-        c2->decode = codec2_decode_700b;
-        break;
-    case CODEC2_MODE_700C:
-        c2->encode = codec2_encode_700c;
-        c2->decode = codec2_decode_700c;
-        break;
-    case CODEC2_MODE_450:
-        c2->encode = codec2_encode_450;
-        c2->decode = codec2_decode_450;
-        break;
-    case CODEC2_MODE_450PWB:
-        /* Encode PWB does not have a dedicated encoder in codec2; use 450 encode path. */
-        c2->encode = codec2_encode_450;
-        c2->decode = codec2_decode_450pwb;
-        break;
-    default:
-        break;
-    }
+    incomudon_codec2_bind_callbacks(c2, mode);
 
     if (c2->encode == NULL || (c2->decode == NULL && c2->decode_ber == NULL))
     {
@@ -488,6 +495,11 @@ void codec2_encode(struct CODEC2 *c2, unsigned char *bits, short speech[])
 
     if (c2->encode == NULL)
     {
+        incomudon_codec2_bind_callbacks(c2, c2->mode);
+    }
+
+    if (c2->encode == NULL)
+    {
         const int bits_per_frame = codec2_bits_per_frame(c2);
         if (bits_per_frame > 0)
             memset(bits, 0, (bits_per_frame + 7) / 8);
@@ -507,6 +519,11 @@ void codec2_decode_ber(struct CODEC2 *c2, short speech[], const unsigned char *b
 {
     if (c2 == NULL || speech == NULL)
         return;
+
+    if (c2->decode == NULL && c2->decode_ber == NULL)
+    {
+        incomudon_codec2_bind_callbacks(c2, c2->mode);
+    }
 
     if (c2->decode == NULL && c2->decode_ber == NULL)
     {
