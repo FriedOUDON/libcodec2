@@ -1,6 +1,7 @@
 #ifndef CODEC2_COMPLEX_COMPAT_H
 #define CODEC2_COMPLEX_COMPAT_H
 
+#include <math.h>
 #include <complex.h>
 
 /*
@@ -36,33 +37,23 @@
  * helper prototypes/macros consistently. Fallback to compiler builtins.
  */
 #ifndef crealf
-#if defined(__clang__) || defined(__GNUC__)
-#define crealf(z) __builtin_crealf((z))
-#endif
+#define crealf(z) ((float)(__real__(z)))
 #endif
 
 #ifndef cimagf
-#if defined(__clang__) || defined(__GNUC__)
-#define cimagf(z) __builtin_cimagf((z))
-#endif
+#define cimagf(z) ((float)(__imag__(z)))
 #endif
 
 #ifndef conjf
-#if defined(__clang__) || defined(__GNUC__)
-#define conjf(z) __builtin_conjf((z))
-#endif
+#define conjf(z) (CMPLXF(crealf(z), -cimagf(z)))
 #endif
 
 #ifndef cabsf
-#if defined(__clang__) || defined(__GNUC__)
-#define cabsf(z) __builtin_cabsf((z))
-#endif
+#define cabsf(z) (sqrtf(crealf(z) * crealf(z) + cimagf(z) * cimagf(z)))
 #endif
 
 #ifndef cargf
-#if defined(__clang__) || defined(__GNUC__)
-#define cargf(z) __builtin_cargf((z))
-#endif
+#define cargf(z) (atan2f(cimagf(z), crealf(z)))
 #endif
 
 #endif
