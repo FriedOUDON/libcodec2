@@ -10,20 +10,26 @@ permissions:
   contents: write
 
 env:
-  NDK_VERSION: r27d
-  ANDROID_PLATFORM: android-23
+  # r27 toolchains can generate runtime-incompatible PLT behavior on some
+  # Android 12 vendor linkers when .so is loaded from app-private storage.
+  # Use a conservative NDK/API combo for maximum compatibility.
+  NDK_VERSION: r25c
+  ANDROID_PLATFORM: android-21
   BUILD_TYPE: Release
   CMAKE_POLICY_VERSION_MINIMUM: "3.5"
   # Safer Release flags for Android runtime-loaded .so:
   # avoid aggressive optimizations that can trigger UB in older devices/NDKs.
   C_FLAGS_ANDROID_RELEASE: >-
-    -O2 -DNDEBUG -fno-strict-aliasing -fwrapv -fno-strict-overflow -fno-fast-math
+    -O2 -DNDEBUG -fPIC -fno-plt -fno-strict-aliasing -fwrapv -fno-strict-overflow -fno-fast-math
+    -mbranch-protection=none
     -DCODEC2_MODE_EN_DEFAULT=0
     -DCODEC2_MODE_3200_EN=1
     -DCODEC2_MODE_2400_EN=1
     -DCODEC2_MODE_1600_EN=1
     -DCODEC2_MODE_700C_EN=1
     -DCODEC2_MODE_450_EN=1
+  SHARED_LD_FLAGS_ANDROID_RELEASE: >-
+    -Wl,-z,now -Wl,-z,relro -Wl,--no-undefined
 
 jobs:
   build-android:
@@ -96,6 +102,7 @@ jobs:
             -DANDROID_PLATFORM="${{ env.ANDROID_PLATFORM }}" \
             -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
             -DCMAKE_C_FLAGS_RELEASE="${{ env.C_FLAGS_ANDROID_RELEASE }}" \
+            -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="${{ env.SHARED_LD_FLAGS_ANDROID_RELEASE }}" \
             -DBUILD_SHARED_LIBS=ON \
             -DCMAKE_POLICY_VERSION_MINIMUM="${{ env.CMAKE_POLICY_VERSION_MINIMUM }}" \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install/${{ matrix.abi }}"
