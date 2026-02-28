@@ -133,6 +133,7 @@ jobs:
             echo "ERROR: RELR tags found in libcodec2.so, expected none" >&2
             exit 1
           fi
+<<<<<<< HEAD
           # JUMP_SLOT for libc/libm symbols is normal in shared objects.
           # We only fail if non-system symbols still depend on PLT indirection.
           "$READELF" -r "$SO" > /tmp/libcodec2.reloc.txt
@@ -145,6 +146,15 @@ jobs:
             fi
             echo "INFO: only system JUMP_SLOT entries found (expected for shared libs)"
             cat /tmp/libcodec2.jumps.txt | head -n 20
+=======
+          # Some Android 12 vendor linkers appear to break on runtime-loaded
+          # PLT/JUMP_SLOT entries in external app-private .so files.
+          "$READELF" -r "$SO" > /tmp/libcodec2.reloc.txt
+          if grep -q "JUMP_SLOT" /tmp/libcodec2.reloc.txt; then
+            echo "ERROR: JUMP_SLOT relocations remain; expected none for runtime-load compatibility" >&2
+            grep "JUMP_SLOT" /tmp/libcodec2.reloc.txt | head -n 20
+            exit 1
+>>>>>>> a601ef865671e2a2e2a8e891ebdcccefe481a669
           fi
 
       - name: Package (include/lib + LICENSES)
