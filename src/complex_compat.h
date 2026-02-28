@@ -31,4 +31,38 @@
 #endif
 #endif
 
+/*
+ * Some Android NDK/Bionic header combinations don't expose C99 complex
+ * helper prototypes/macros consistently. Fallback to compiler builtins.
+ */
+#ifndef crealf
+#if defined(__clang__) || defined(__GNUC__)
+#define crealf(z) __builtin_crealf((z))
+#endif
+#endif
+
+#ifndef cimagf
+#if defined(__clang__) || defined(__GNUC__)
+#define cimagf(z) __builtin_cimagf((z))
+#endif
+#endif
+
+#ifndef conjf
+#if defined(__clang__) || defined(__GNUC__)
+#define conjf(z) __builtin_conjf((z))
+#endif
+#endif
+
+#ifndef cabsf
+#if defined(__clang__) || defined(__GNUC__)
+#define cabsf(z) __builtin_cabsf((z))
+#endif
+#endif
+
+#ifndef cargf
+#if defined(__clang__) || defined(__GNUC__)
+#define cargf(z) __builtin_cargf((z))
+#endif
+#endif
+
 #endif
