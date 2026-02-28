@@ -133,6 +133,19 @@ jobs:
             echo "ERROR: RELR tags found in libcodec2.so, expected none" >&2
             exit 1
           fi
+          # JUMP_SLOT for libc/libm symbols is normal in shared objects.
+          # We only fail if non-system symbols still depend on PLT indirection.
+          "$READELF" -r "$SO" > /tmp/libcodec2.reloc.txt
+          grep "JUMP_SLOT" /tmp/libcodec2.reloc.txt > /tmp/libcodec2.jumps.txt || true
+          if [ -s /tmp/libcodec2.jumps.txt ]; then
+            if grep -Ev "@LIBC|@LIBM" /tmp/libcodec2.jumps.txt > /tmp/libcodec2.jumps.nonsys.txt; then
+              echo "ERROR: non-system JUMP_SLOT entries remain" >&2
+              cat /tmp/libcodec2.jumps.nonsys.txt | head -n 40
+              exit 1
+            fi
+            echo "INFO: only system JUMP_SLOT entries found (expected for shared libs)"
+            cat /tmp/libcodec2.jumps.txt | head -n 20
+          fi
 
       - name: Package (include/lib + LICENSES)
         run: |

@@ -208,9 +208,14 @@ endif(UNIX)
 if(ANDROID)
     # Runtime-loaded on diverse vendor linkers: force eager PLT binding and
     # conservative relocation packing for compatibility.
+    target_compile_options(codec2 PRIVATE
+        -fno-plt
+        -fno-semantic-interposition
+    )
     target_link_options(codec2 PRIVATE
         -Wl,-z,now
         -Wl,--pack-dyn-relocs=none
+        -Wl,-Bsymbolic-functions
     )
 endif()
 
