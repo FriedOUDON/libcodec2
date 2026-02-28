@@ -29,7 +29,7 @@ env:
     -DCODEC2_MODE_700C_EN=1
     -DCODEC2_MODE_450_EN=1
   SHARED_LD_FLAGS_ANDROID_RELEASE: >-
-    -Wl,-z,now -Wl,-z,relro -Wl,--no-undefined
+    -Wl,-z,lazy -Wl,-z,relro -Wl,--no-undefined
     -Wl,--pack-dyn-relocs=none
 
 jobs:
