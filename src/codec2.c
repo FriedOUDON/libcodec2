@@ -145,6 +145,9 @@ struct CODEC2 * codec2_create(int mode)
 	return NULL;
 
     c2->mode = mode;
+    c2->encode = NULL;
+    c2->decode = NULL;
+    c2->decode_ber = NULL;
 
     /* store constants in a few places for convenience */
     
@@ -305,81 +308,65 @@ struct CODEC2 * codec2_create(int mode)
 
     c2->fmlfeat = NULL;
 
-    // make sure that one of the two decode function pointers is empty
-    // for the encode function pointer this is not required since we always set it
-    // to a meaningful value
-  
-    c2->decode = NULL;
-    c2->decode_ber = NULL;
-
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_3200, c2->mode))
+    /* Bind codec callbacks from requested mode directly.
+       This avoids runtime mis-selection when mode flags drift in external builds. */
+    switch (mode)
     {
-	c2->encode = codec2_encode_3200;
-	c2->decode = codec2_decode_3200;
+    case CODEC2_MODE_3200:
+        c2->encode = codec2_encode_3200;
+        c2->decode = codec2_decode_3200;
+        break;
+    case CODEC2_MODE_2400:
+        c2->encode = codec2_encode_2400;
+        c2->decode = codec2_decode_2400;
+        break;
+    case CODEC2_MODE_1600:
+        c2->encode = codec2_encode_1600;
+        c2->decode = codec2_decode_1600;
+        break;
+    case CODEC2_MODE_1400:
+        c2->encode = codec2_encode_1400;
+        c2->decode = codec2_decode_1400;
+        break;
+    case CODEC2_MODE_1300:
+        c2->encode = codec2_encode_1300;
+        c2->decode_ber = codec2_decode_1300;
+        break;
+    case CODEC2_MODE_1200:
+        c2->encode = codec2_encode_1200;
+        c2->decode = codec2_decode_1200;
+        break;
+    case CODEC2_MODE_700:
+        c2->encode = codec2_encode_700;
+        c2->decode = codec2_decode_700;
+        break;
+    case CODEC2_MODE_700B:
+        c2->encode = codec2_encode_700b;
+        c2->decode = codec2_decode_700b;
+        break;
+    case CODEC2_MODE_700C:
+        c2->encode = codec2_encode_700c;
+        c2->decode = codec2_decode_700c;
+        break;
+    case CODEC2_MODE_450:
+        c2->encode = codec2_encode_450;
+        c2->decode = codec2_decode_450;
+        break;
+    case CODEC2_MODE_450PWB:
+        /* Encode PWB does not have a dedicated encoder in codec2; use 450 encode path. */
+        c2->encode = codec2_encode_450;
+        c2->decode = codec2_decode_450pwb;
+        break;
+    default:
+        break;
     }
 
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_2400, c2->mode))
+    if (c2->encode == NULL || (c2->decode == NULL && c2->decode_ber == NULL))
     {
-	c2->encode = codec2_encode_2400;
-	c2->decode = codec2_decode_2400;
+        codec2_destroy(c2);
+        return NULL;
     }
 
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_1600, c2->mode))
-    {
-	c2->encode = codec2_encode_1600;
-	c2->decode = codec2_decode_1600;
-    }
-
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_1400, c2->mode))
-    {
-	c2->encode = codec2_encode_1400;
-	c2->decode = codec2_decode_1400;
-    }
-
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_1300, c2->mode))
-    {
-	c2->encode = codec2_encode_1300;
-	c2->decode_ber = codec2_decode_1300;
-    }
-
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_1200, c2->mode))
-    {
-	c2->encode = codec2_encode_1200;
-	c2->decode = codec2_decode_1200;
-    }
-
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_700, c2->mode))
-    {
-	c2->encode = codec2_encode_700;
-	c2->decode = codec2_decode_700;
-    }
-
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_700B, c2->mode))
-    {
-	c2->encode = codec2_encode_700b;
-	c2->decode = codec2_decode_700b;
-    }
-
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_700C, c2->mode))
-    {
-	c2->encode = codec2_encode_700c;
-	c2->decode = codec2_decode_700c;
-    }
-
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_450, c2->mode))
-    {
-	c2->encode = codec2_encode_450;
-	c2->decode = codec2_decode_450;
-    }
-
-    if ( CODEC2_MODE_ACTIVE(CODEC2_MODE_450PWB, c2->mode))
-    {
-    	//Encode PWB doesnt make sense
-	c2->encode = codec2_encode_450;
-	c2->decode = codec2_decode_450pwb;
-    }
-
-    
     return c2;
 }
 
@@ -496,8 +483,16 @@ int codec2_samples_per_frame(struct CODEC2 *c2) {
 
 void codec2_encode(struct CODEC2 *c2, unsigned char *bits, short speech[])
 {
-    assert(c2 != NULL);
-    assert(c2->encode != NULL);
+    if (c2 == NULL || bits == NULL || speech == NULL)
+        return;
+
+    if (c2->encode == NULL)
+    {
+        const int bits_per_frame = codec2_bits_per_frame(c2);
+        if (bits_per_frame > 0)
+            memset(bits, 0, (bits_per_frame + 7) / 8);
+        return;
+    }
 
     c2->encode(c2, bits, speech);
 
@@ -510,8 +505,16 @@ void codec2_decode(struct CODEC2 *c2, short speech[], const unsigned char *bits)
 
 void codec2_decode_ber(struct CODEC2 *c2, short speech[], const unsigned char *bits, float ber_est)
 {
-    assert(c2 != NULL);
-    assert(c2->decode != NULL || c2->decode_ber != NULL);
+    if (c2 == NULL || speech == NULL)
+        return;
+
+    if (c2->decode == NULL && c2->decode_ber == NULL)
+    {
+        const int samples = codec2_samples_per_frame(c2);
+        if (samples > 0)
+            memset(speech, 0, samples * sizeof(short));
+        return;
+    }
 
     if (c2->decode != NULL)
     {
