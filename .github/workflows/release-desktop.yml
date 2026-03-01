@@ -299,10 +299,10 @@ jobs:
           if-no-files-found: error
 
   # -----------------------------
-  # iOS (device arm64, static lib)
+  # iOS (device arm64, shared lib)
   # -----------------------------
   build-ios-arm64:
-    name: iOS arm64 (iphoneos)
+    name: iOS arm64 (iphoneos, shared)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -320,7 +320,7 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
             -DLPCNET=${{ env.LPCNET }} \
-            -DBUILD_SHARED_LIBS=OFF \
+            -DBUILD_SHARED_LIBS=ON \
             -DBUILD_CODEC2_TOOLS=OFF \
             -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/staging/ios-arm64"
@@ -355,7 +355,7 @@ jobs:
             echo "tag: ${TAG}"
             echo "commit: ${GITHUB_SHA}"
             echo "target: ${TRIP}"
-            echo "configure_flags: -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 -DLPCNET=${{ env.LPCNET }} -DBUILD_SHARED_LIBS=OFF -DBUILD_CODEC2_TOOLS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}"
+            echo "configure_flags: -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 -DLPCNET=${{ env.LPCNET }} -DBUILD_SHARED_LIBS=ON -DBUILD_CODEC2_TOOLS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}"
           } > "${OUT}/${PKG}/BUILDINFO.txt"
 
           (cd "${OUT}" && tar -czf "${PKG}.tar.gz" "${PKG}")
@@ -438,6 +438,22 @@ jobs:
         run: cmake --install build\msvc --config ${{ env.BUILD_TYPE }}
         shell: pwsh
 
+      - name: Verify shared artifact (.dll)
+        run: |
+          $prefix = Join-Path "${{ github.workspace }}" "staging\windows-msvc-x64"
+          $dllDir = Join-Path $prefix "bin"
+          $dll = @(Get-ChildItem -Path $dllDir -Filter *.dll -ErrorAction SilentlyContinue)
+          if (-not $dll -or $dll.Count -eq 0) {
+            Write-Error "No DLL found under $dllDir (shared build expected)."
+            if (Test-Path $prefix) {
+              Get-ChildItem -Path $prefix -Recurse | Select-Object FullName
+            }
+            exit 1
+          }
+          Write-Host "Found DLL(s):"
+          $dll | ForEach-Object { Write-Host " - $($_.Name)" }
+        shell: pwsh
+
       - name: Package
         run: |
           $tag = "${{ github.ref_name }}"
@@ -512,6 +528,13 @@ jobs:
 
           cmake --build "$WS/build/mingw64" -j 2
           cmake --install "$WS/build/mingw64"
+
+          # Ensure MinGW artifact is dynamic (.dll + import lib)
+          if ! ls "$WS/staging/${TRIP}/bin/"*.dll >/dev/null 2>&1; then
+            echo "ERROR: no DLL found under $WS/staging/${TRIP}/bin (shared build expected)" >&2
+            find "$WS/staging/${TRIP}" -maxdepth 3 -type f | sort || true
+            exit 1
+          fi
 
           OUT="$WS/dist"
           PKG="libcodec2-${TAG}-${TRIP}"
