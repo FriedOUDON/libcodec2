@@ -10,10 +10,8 @@ permissions:
   contents: write
 
 env:
-  # r27 toolchains can generate runtime-incompatible PLT behavior on some
-  # Android 12 vendor linkers when .so is loaded from app-private storage.
-  # Use a conservative NDK/API combo for maximum compatibility.
-  NDK_VERSION: r23c
+  # Align with native app toolchain for compatibility triage.
+  NDK_VERSION: r27c
   ANDROID_PLATFORM: android-21
   BUILD_TYPE: Release
   CMAKE_POLICY_VERSION_MINIMUM: "3.5"
