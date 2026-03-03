@@ -12,7 +12,12 @@ This repository is a fork customized for Android builds.
   a lightweight internal implementation.
 - For this fork's intended Android use cases, `varicode` features are not used.
 - Bitstream compatibility with historical `varicode` behavior is not guaranteed.
-- Core speech codec functionality is unchanged by this fork-specific change.
+- This fork also adds runtime compatibility/safety changes used by IncomUdon:
+  - ABI/version probing support for dynamic loading compatibility checks.
+  - Stability/initialization fixes in `src/codec2.c` (including `fft_fwd_cfg`
+    handling paths).
+- No intentional Codec2 bitstream-format changes are introduced by these
+  fork-specific runtime/stability patches.
 
 License notes:
 
